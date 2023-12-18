@@ -1,0 +1,64 @@
+:gmatch, :sub, :lower, :Explode, :Trim = string
+IsConCommandBlocked = IsConCommandBlocked
+RunConsoleCommand = RunConsoleCommand
+concommands = concommand.GetTable!
+ConVarExists = ConVarExists
+:remove = table
+unpack = unpack
+
+hook.Add "InitPostEntity", "cfg/autoexec.cfg", ->
+    timer.Simple 0, ->
+        developer, counter = cvars.Number( "developer", 0 ) > 0, 0
+        file.AsyncRead "cfg/autoexec.cfg", "GAME", ( _, __, status, data ) ->
+            if status ~= 0
+                return
+
+            if #data == 0
+                return
+
+            lineNumber = 0
+            if developer
+                print( "[Autoexec]" )
+
+            for line in gmatch( data, "(.-)\n" )
+                line = Trim( line )
+                lineNumber += 1
+
+                if sub( line, 1, 2 ) == "//"
+                    continue
+
+                for str in gmatch( line, "[^;]+" )
+                    unless str
+                        continue
+
+                    str = Trim( str )
+                    if #str == 0
+                        continue
+
+                    args = Explode( "%s", str, true )
+                    if #args == 0
+                        continue
+
+                    command = remove( args, 1 )
+                    if #command == 0 or IsConCommandBlocked( command )
+                        continue
+
+                    unless ConVarExists( command ) or concommands[ lower( command ) ]
+                        continue
+
+                    -- https://gitspartv.github.io/LuaJIT-Benchmarks/#test4
+                    switch #args
+                        when 0
+                            RunConsoleCommand( command )
+                        when 1
+                            RunConsoleCommand( command, args[ 1 ] )
+                        when 2
+                            RunConsoleCommand( command, args[ 1 ], args[ 2 ] )
+                        when 3
+                            RunConsoleCommand( command, args[ 1 ], args[ 2 ], args[ 3 ] )
+                        else
+                            RunConsoleCommand( command, unpack( args ) )
+
+                    if developer
+                        counter += 1
+                        print( counter .. ". \"" .. str .. "\" - cfg/autoexec.cfg:" .. lineNumber )
