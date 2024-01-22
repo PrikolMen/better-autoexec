@@ -10,10 +10,7 @@ hook.Add "InitPostEntity", "cfg/autoexec.cfg", ->
     timer.Simple 0, ->
         developer, counter = cvars.Number( "developer", 0 ) > 0, 0
         file.AsyncRead "cfg/autoexec.cfg", "GAME", ( _, __, status, data ) ->
-            if status ~= 0
-                return
-
-            if #data == 0
+            if status ~= 0 or #data == 0
                 return
 
             lineNumber = 0
